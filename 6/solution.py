@@ -1,52 +1,55 @@
-import time
-import os
-clear = lambda: os.system('clear')
+grid = [list(row) for row in open('input.txt').read().split('\n')]
+rowsCount = len(grid)
+colsCount = len(grid[0])
 
-grid = open('input.txt').read().split('\n')
-position = (0, 0)
-direction = { 'v': (1, 0), '>': (0, 1), '<': (0, -1), '^': (-1, 0) }
+for r in range(rowsCount):
+	for c in range(colsCount):
+		if grid[r][c] == '^':
+			break
+	else:
+		continue
+	break
 
-def findStart() -> None:
-	for rowIndex, row in enumerate(grid):
-		for colIndex, cell in enumerate(row):
-			if cell not in ['v', '>', '<', '^']:
-				continue
-			global position, direction
-			position = (rowIndex, colIndex)
-			direction = direction[cell]
+originalPath = set()
 
-def outOfBounds(position: tuple[int, int]) -> bool:
-	return position[0] < 0 or position[0] >= len(grid) or position[1] < 0 or position[1] >= len(grid[0])
+def loop(grid, r, c, originalPath=None):
+	dr, dc = -1, 0
+	seen = set()
 
-def isObstacle(position: tuple[int, int]) -> bool:
-	return grid[position[0]][position[1]] == '#'
+	while True:
+		if originalPath is not None:
+			originalPath.add((r, c))
+		seen.add((r, c, dr, dc))
 
-def printVisitedGrid() -> None:
-	clear()
-	for rowIndex, row in enumerate(grid):
-		for colIndex, cell in enumerate(row):
-			if (rowIndex, colIndex) in visited:
-				print('\033[1;92mX\033[0m', end='')
-			else:
-				print(cell, end='')
-		print()
+		if r + dr < 0 or r + dr >= rowsCount or c + dc < 0 or c + dc >= colsCount: # guard exits grid
+			break
+
+		if grid[r + dr][c + dc] == '#': # change direction
+			dr, dc = dc, -dr
+		else:
+			r, c = r + dr, c + dc
+
+		# part 2
+		if (r, c, dr, dc) in seen:
+			return True
+
+	# part 1
+	# print(len(seen))
 
 # part 1
-findStart()
-visited: set[(int, int)] = set()
-while True:
-	visited.add(position)
-	# time.sleep(0.05)
-	# printVisitedGrid()
-	nextPosition = (position[0] + direction[0], position[1] + direction[1])
+loop(grid, r, c, originalPath)
 
-	if outOfBounds(nextPosition):
-		break
+# part 2
 
-	if isObstacle(nextPosition): # turn right
-		direction = (direction[1], -direction[0])
-		nextPosition = (position[0] + direction[0], position[1] + direction[1])
+count = 0
 
-	position = nextPosition
+for rr, cc in originalPath:
+	if grid[rr][cc] != '.':
+			continue
+	grid[rr][cc] = '#'
 
-print(len(visited))
+	if loop(grid, r, c):
+		count += 1
+	grid[rr][cc] = '.'
+
+print(count)
