@@ -9,8 +9,7 @@ if ! [[ "$1" =~ ^[1-9]$|^1[0-9]$|^2[0-5]$ ]]; then
   exit 1
 fi
 
-DAY_DIR="day$1"
-mkdir -p "$DAY_DIR"
+mkdir -p "$1"
 
 touch "$DAY_DIR/solution.py"
 touch "$DAY_DIR/input.txt"
