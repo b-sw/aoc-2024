@@ -1,5 +1,6 @@
 grid = open('input.txt').read().split('\n')
 rCount, cCount = len(grid), len(grid[0])
+dirs = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
 def solve() -> None:
 	regions = getRegions()
@@ -11,7 +12,7 @@ def solve() -> None:
 def perimeter(region: list[tuple[int, int]]) -> int:
 	perimeter = 0
 	for r, c in region:
-		for dr, dc in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+		for dr, dc in dirs:
 			nr, nc = r + dr, c + dc
 			if (nr, nc) not in region:
 				perimeter += 1
@@ -44,7 +45,7 @@ def dfs(r: int, c: int, visited: set[tuple[int, int]]) -> list[tuple[int, int]]:
 		plots.append((r, c))
 		visited.add((r, c))
 
-		for dr, dc in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+		for dr, dc in dirs:
 			nr, nc = r + dr, c + dc
 			if 0 <= nr < rCount and 0 <= nc < cCount and grid[nr][nc] == grid[r][c]:
 				stack.append((nr, nc))
@@ -62,7 +63,39 @@ def printColoredRegions(regions: list[list[tuple[int, int]]]) -> None:
 		print('\033[0m')
 
 def solve2() -> None:
-	pass
+	regions = getRegions()
+
+	bulkDiscountPrice = sum([len(region) * sides(region) for region in regions])
+	print(bulkDiscountPrice)
+
+def sides(region: list[tuple[int, int]]) -> int:
+	edgePlots = set()
+
+	for r, c in region:
+		for dr, dc in dirs + [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
+			nr, nc = r + dr, c + dc
+			if (nr, nc) not in region:
+				edgePlots.add((r, c))
+				break
+
+	vertices = set()
+	for r, c in edgePlots:
+		if isNonCorner((r, c), region):
+			continue
+
+		for dr, dc in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
+			nr, nc = r + dr, c + dc
+			if (nr, nc) not in region:
+				vertices.add(((r + nr) / 2, (c + nc) / 2))
+	
+	print(len(vertices), region)
+	return len(vertices)
+
+def isNonCorner(plot: tuple[int, int], regionPlots: set[tuple[int, int]]) -> bool:
+	return False
+	r, c = plot
+	return (r + 1, c) in regionPlots and (r - 1, c) in regionPlots or (r, c + 1) in regionPlots and (r, c - 1) in regionPlots
+
 	
 solve()
 solve2()
