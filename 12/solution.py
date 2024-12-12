@@ -1,6 +1,7 @@
 grid = open('input.txt').read().split('\n')
 rCount, cCount = len(grid), len(grid[0])
 dirs = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+diagonalDirs = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
 
 def solve() -> None:
 	regions = getRegions()
@@ -72,30 +73,52 @@ def sides(region: list[tuple[int, int]]) -> int:
 	edgePlots = set()
 
 	for r, c in region:
-		for dr, dc in dirs + [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
+		for dr, dc in dirs:
 			nr, nc = r + dr, c + dc
 			if (nr, nc) not in region:
 				edgePlots.add((r, c))
 				break
 
-	vertices = set()
+	edges = set()
+
 	for r, c in edgePlots:
-		if isNonCorner((r, c), region):
-			continue
-
-		for dr, dc in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
-			nr, nc = r + dr, c + dc
-			if (nr, nc) not in region:
-				vertices.add(((r + nr) / 2, (c + nc) / 2))
+		for dr, dc in [(0, 1), (0, -1)]:
+			nc = c + dc
+			if (r, nc) not in region:
+				edges.add((r, (c + nc) / 2))
+		for dr, dc in [(1, 0), (-1, 0)]:
+			nr = r + dr
+			if (nr, c) not in region:
+				edges.add(((r + nr) / 2, c))
 	
-	print(len(vertices), region)
-	return len(vertices)
+	vertices = set()
 
-def isNonCorner(plot: tuple[int, int], regionPlots: set[tuple[int, int]]) -> bool:
-	return False
-	r, c = plot
-	return (r + 1, c) in regionPlots and (r - 1, c) in regionPlots or (r, c + 1) in regionPlots and (r, c - 1) in regionPlots
+	for r, c in edgePlots:
+		for dr, dc in diagonalDirs:
+			nr, nc = r + dr, c + dc
+			vertices.add(((r + nr) / 2, (c + nc) / 2))
 
+	total = 0
+	for vertex in vertices:
+		edgesDirs = [[(-0.5, 0), (0, -0.5)], [(0, -0.5), (0.5, 0)], [(0.5, 0), (0, 0.5)], [(0, 0.5), (-0.5, 0)]]
+
+		vertexMatches = 0
+		for edgesDir in edgesDirs:
+			edgeD1, edgeD2 = edgesDir
+			isCorner = True
+			cornerCount = 0
+			for dr, dc in [edgeD1, edgeD2]:
+				nr, nc = vertex[0] + dr, vertex[1] + dc
+				if (nr, nc) not in edges:
+					isCorner = False
+					break
+			if vertex == (2.5, 2.5):
+				print('vertex', vertex, isCorner, cornerCount)
+			if isCorner:
+				vertexMatches += 1
+		total += 2 if vertexMatches > 2 else vertexMatches
+
+	return total
 	
 solve()
 solve2()
