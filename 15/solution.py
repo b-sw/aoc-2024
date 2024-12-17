@@ -59,17 +59,33 @@ def solve2() -> None:
 	grid, moves, position = parseInput()
 	largeGrid = enlargeGrid(grid)
 	positionRow, positionCol = position
+	positionCol *= 2
 
 	for move in moves:
+		print('new position', positionRow, positionCol)
 		if canMove(largeGrid, (positionRow, positionCol), MOVES[move]):
-			printGrid(largeGrid)
+			# printGrid(largeGrid)
 			print('can move', positionRow, positionCol, move)
 			moveRobot(largeGrid, (positionRow, positionCol), MOVES[move])
 
-		deltaRow, deltaCol = MOVES[move]
-		positionRow, positionCol = positionRow + deltaRow, positionCol + deltaCol
+			deltaRow, deltaCol = MOVES[move]
+			positionRow, positionCol = positionRow + deltaRow, positionCol + deltaCol
+
+	boxesGPSSum = 0
+	for r in range(len(largeGrid)):
+		for c in range(len(largeGrid[r])):
+			if largeGrid[r][c] == '[':
+				boxesGPSSum += (100 * r) + c
+				# rMin = min(r, len(largeGrid) - 1 - r)
+				# cMin = min(c + 1, c, len(largeGrid[r]) - 1 - c, len(largeGrid[r]) - c)
+				# print('r, c', r, c, '|', rMin, cMin)
+				# if rMin < cMin:
+				# 	boxesGPSSum += (100 * rMin) + c
+				# else:
+				# 	boxesGPSSum += (100 * r) + cMin
 
 	printGrid(largeGrid)
+	print(boxesGPSSum)
 
 
 def enlargeGrid(grid: list[list[str]]) -> list[list[str]]:
@@ -84,48 +100,128 @@ def enlargeGrid(grid: list[list[str]]) -> list[list[str]]:
 	
 	return newGrid
 
-def canMove(grid: list[list[str]], position: tuple[int, int], move: tuple[int, int]) -> bool:
-	positionRow, positionCol = position
-	deltaRow, deltaCol = move
-	newRow, newCol = positionRow + deltaRow, positionCol + deltaCol
+def canMove(grid: list[list[str]], position: tuple, move: tuple) -> bool:
+	newPosition = (position[0] + move[0], position[1] + move[1])
+	if move == (-1, 0):
+		return canMoveUp(grid, newPosition)
+	elif move == (1, 0):
+		return canMoveDown(grid, newPosition)
+	elif move == (0, -1):
+		return canMoveLeft(grid, newPosition)
+	elif move == (0, 1):
+		return canMoveRight(grid, newPosition)
 	
-	if grid[newRow][newCol] == EMPTY:
-		return True
-	if grid[newRow][newCol] == WALL:
+def canMoveUp(grid: list[list[str]], position: tuple) -> bool:
+	row, col = position
+
+	if grid[row][col] == WALL:
 		return False
-	if grid[newRow][newCol] == '[':
-		return canMove(grid, (newRow, newCol), move) and canMove(grid, (newRow, newCol + deltaCol), move)
-	if grid[newRow][newCol] == ']':
-		return canMove(grid, (newRow, newCol), move) and canMove(grid, (newRow, newCol - deltaCol), move)
+	if grid[row][col] == EMPTY:
+		return True
+	if grid[row][col] == '[':
+		return canMoveUp(grid, (row - 1, col)) and canMoveUp(grid, (row - 1, col + 1))
+	if grid[row][col] == ']':
+		return canMoveUp(grid, (row - 1, col)) and canMoveUp(grid, (row - 1, col - 1))
 	
+	raise ValueError("[canMoveUp] Invalid tile", grid[row][col])
 
-	raise Exception('Invalid tile', grid[newRow][newCol])
+def canMoveDown(grid: list[list[str]], position: tuple) -> bool:
+	row, col = position
 
-def moveRobot(grid: list[list[str]], position: tuple[int, int], move: tuple[int, int]) -> None:
-	positionRow, positionCol = position
-	deltaRow, deltaCol = move
-	newRow, newCol = positionRow + deltaRow, positionCol + deltaCol
-	oldTile = grid[positionRow][positionCol]
+	if grid[row][col] == WALL:
+		return False
+	if grid[row][col] == EMPTY:
+		return True
+	if grid[row][col] == '[':
+		return canMoveDown(grid, (row + 1, col)) and canMoveDown(grid, (row + 1, col + 1))
+	if grid[row][col] == ']':
+		return canMoveDown(grid, (row + 1, col)) and canMoveDown(grid, (row + 1, col - 1))
+	
+	raise ValueError("[canMoveDown] Invalid tile", grid[row][col])
 
-	if grid[newRow][newCol] == EMPTY:
-		grid[positionRow][positionCol] = EMPTY
-		grid[newRow][newCol] = oldTile
-		return
-	if grid[newRow][newCol] == '[':
-		moveRobot(grid, (newRow, newCol), move)
-		moveRobot(grid, (newRow, newCol + deltaCol), move)
-		grid[positionRow][positionCol] = EMPTY
-		grid[newRow][newCol] = oldTile
-		return
-	if grid[newRow][newCol] == ']':
-		moveRobot(grid, (newRow, newCol), move)
-		moveRobot(grid, (newRow, newCol - deltaCol), move)
-		grid[positionRow][positionCol] = EMPTY
-		grid[newRow][newCol] = oldTile
-		return
+def canMoveLeft(grid: list[list[str]], position: tuple) -> bool:
+	row, col = position
 
-	raise Exception('Invalid tile', grid[newRow][newCol])
+	if grid[row][col] == WALL:
+		return False
+	if grid[row][col] == EMPTY:
+		return True
+	if grid[row][col] == ']':
+		return canMoveLeft(grid, (row, col - 2))
+	
+	raise ValueError("[canMoveLeft] Invalid tile", grid[row][col])
 
+def canMoveRight(grid: list[list[str]], position: tuple) -> bool:
+	row, col = position
+
+	if grid[row][col] == WALL:
+		return False
+	if grid[row][col] == EMPTY:
+		return True
+	if grid[row][col] == '[':
+		return canMoveRight(grid, (row, col + 2))
+	
+	raise ValueError("[canMoveRight] Invalid tile", grid[row][col])
+
+def moveRobot(grid: list[list[str]], position: tuple, move: tuple) -> None:
+	newPosition = (position[0] + move[0], position[1] + move[1])
+	if move == (-1, 0):
+		moveUp(grid, newPosition)
+	elif move == (1, 0):
+		moveDown(grid, newPosition)
+	elif move == (0, -1):
+		moveLeft(grid, newPosition)
+	elif move == (0, 1):
+		moveRight(grid, newPosition)
+
+def moveUp(grid: list[list[str]], position: tuple) -> None:
+	row, col = position
+	print('move up', row, col)
+
+	if grid[row][col] == '[':
+		moveUp(grid, (row - 1, col + 1))
+		moveUp(grid, (row - 1, col))
+	if grid[row][col] == ']':
+		moveUp(grid, (row - 1, col))
+		moveUp(grid, (row - 1, col - 1))
+
+	grid[row][col] = grid[row + 1][col]
+	grid[row + 1][col] = '.'
+
+def moveDown(grid: list[list[str]], position: tuple) -> None:
+	row, col = position
+	print('move down', row, col)
+
+	if grid[row][col] == '[':
+		moveDown(grid, (row + 1, col + 1))
+		moveDown(grid, (row + 1, col))
+	if grid[row][col] == ']':
+		moveDown(grid, (row + 1, col))
+		moveDown(grid, (row + 1, col - 1))
+
+	grid[row][col] = grid[row - 1][col]
+	grid[row - 1][col] = '.'
+
+def moveLeft(grid: list[list[str]], position: tuple) -> None:
+	row, col = position
+	print('move left', row, col)
+
+	if grid[row][col] != EMPTY:
+		moveLeft(grid, (row, col - 1))
+
+	print('moving left', row, col)
+	grid[row][col] = grid[row][col + 1]
+	grid[row][col + 1] = '.'
+
+def moveRight(grid: list[list[str]], position: tuple) -> None:
+	row, col = position
+	print('move right', row, col)
+
+	if grid[row][col] != EMPTY:
+		moveRight(grid, (row, col + 1))
+
+	grid[row][col] = grid[row][col - 1]
+	grid[row][col - 1] = '.'
 
 solve()
 solve2()
